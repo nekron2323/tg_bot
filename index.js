@@ -18,6 +18,19 @@ const options = {
     })
 }
 
+const replay_options = {
+    reply_markup: JSON.stringify({
+        inline_keyboard: [
+            [{ text: 'Играть еще раз!', callback_data: '/game' }]            
+        ]
+    })
+}
+
+const startGame = async (chatId) => {
+    chats[chatId] = Math.floor(Math.random() * 10)
+    return bot.sendMessage(chatId, 'Отгадывай', options)
+}
+
 const start = () => {
     bot.setMyCommands([
         { command: '/start', description: 'Приветствие' },
@@ -34,10 +47,16 @@ const start = () => {
         }
         if (text === '/game') {
             await bot.sendMessage(chatId, 'Сейчас я загадаю число от 0 до 9, а ты должен угадать')
-            const num = Math.floor(Math.random() * 10)
-            chats[chatId] = num
-            return bot.sendMessage(chatId, 'Отгадывай', options)
+            return startGame(chatId)
         }
+    })
+
+    bot.on('callback_query', msg => {
+        const data = msg.data
+        const chatId = msg.message.chat.id
+        if (data === '/game') return startGame(chatId)
+        if (data == chats[chatId]) return bot.sendMessage(chatId, `Поздравляю! Вы угадали`, replay_options)
+        return bot.sendMessage(chatId, `Неверно! Попробуйте еще раз`, options)
     })
 }
 
